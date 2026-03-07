@@ -1,8 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import signup, get_user_profile
-from .views import reflections_view
-
+from .views import signup, get_user_profile, reflections_view, reflection_detail_view # Add reflection_detail_view
 urlpatterns = [
     # Authentication Endpoints
     path('signup/', signup, name='signup'),
@@ -12,5 +10,6 @@ urlpatterns = [
     # Protected Data Endpoints
     path('profile/', get_user_profile, name='user_profile'),
     path('reflections/', reflections_view, name='reflections'),
+    path('reflections/', reflections_view, name='reflections'),
+    path('reflections/<int:pk>/', reflection_detail_view, name='reflection_detail'), # NEW LINE
 ]
-
