@@ -15,3 +15,17 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_persona_display()}"
+
+
+class DailyReflection(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reflections')
+    content = models.TextField()
+    ai_insight = models.TextField(blank=True, null=True)
+    mood = models.CharField(max_length=20, blank=True, null=True) # e.g., 'calm', 'thinking'
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at'] # Always show newest first
+
+    def __str__(self):
+        return f"Reflection by {self.user.username} on {self.created_at.strftime('%Y-%m-%d')}"
