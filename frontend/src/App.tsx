@@ -351,10 +351,12 @@ function App() {
     : reflectionsHistory.slice(0, visibleCount);
 
   return (
-    <div className={`relative min-h-screen transition-colors duration-700 font-['Inter',sans-serif] selection:bg-[#5EEAD4] selection:text-[#0F1117] ${
+    <div className={`relative flex flex-col min-h-screen transition-colors duration-700 font-['Inter',sans-serif] selection:bg-[#5EEAD4] selection:text-[#0F1117] ${
       theme === 'dark' ? 'bg-[#0F1117] text-[#E6EAF2]' : 'bg-[#F7F8FB] text-[#1F2937] selection:bg-[#6366F1] selection:text-white'
     }`}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&display=swap');`}</style>
+      
+      {/* Ambient Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] opacity-20 pointer-events-none blur-[100px] sm:blur-[120px] transition-all duration-1000 z-0 fixed"
            style={{ background: theme === 'dark' ? 'radial-gradient(circle, #5EEAD4 0%, transparent 70%)' : 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
 
@@ -408,9 +410,10 @@ function App() {
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+      {/* Main Content Area */}
+      <main className="flex-1 relative z-10 flex flex-col items-center justify-center w-full p-4 sm:p-6 lg:p-8">
         {token ? (
-          <div className="w-full max-w-3xl animate-fade-in-up pb-24 mt-12 sm:mt-0">
+          <div className="w-full max-w-3xl animate-fade-in-up pb-12 mt-12 sm:mt-0">
             <header className="mb-8 text-center">
               <h1 className="text-3xl sm:text-4xl font-light tracking-widest mb-2">VISCORA <span className={`font-normal ${theme === 'dark' ? 'text-[#5EEAD4]' : 'text-[#6366F1]'}`}>NEXUS</span></h1>
             </header>
@@ -654,7 +657,6 @@ function App() {
               </div>
             )}
           </div>
-
         ) : (
           <div className="w-full max-w-md animate-fade-in-up relative z-20 px-4 sm:px-0">
              <div className="text-center mb-10 sm:mb-12 mt-8 sm:mt-0">
@@ -698,7 +700,31 @@ function App() {
             </div>
           </div>
         )}
-      </div>
+      </main>
+
+      {/* --- BEAUTIFUL FOOTER --- */}
+      <footer className={`w-full py-8 mt-auto relative z-10 border-t backdrop-blur-sm transition-colors duration-500 ${
+        theme === 'dark' ? 'border-white/5 bg-[#0F1117]/50' : 'border-black/5 bg-[#F7F8FB]/50'
+      }`}>
+        <div className="flex flex-col items-center justify-center gap-3">
+           <p className={`text-xs tracking-widest uppercase font-medium ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+            Viscora Nexus © {new Date().getFullYear()}
+           </p>
+           <a
+             href="https://github.com/SrijanSingh9/Viscora-Nexus"
+             target="_blank"
+             rel="noopener noreferrer"
+             className={`flex items-center gap-2 text-sm font-medium transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 ${
+               theme === 'dark' ? 'text-[#A4A9B6] hover:text-[#5EEAD4]' : 'text-[#4B5563] hover:text-[#6366F1]'
+             }`}
+           >
+             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+               <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+             </svg>
+             View on GitHub
+           </a>
+        </div>
+      </footer>
     </div>
   );
 }
