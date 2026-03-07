@@ -38,6 +38,7 @@ function App() {
   const [visibleCount, setVisibleCount] = useState(2);
   const [editingRefId, setEditingRefId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
 
   // Chatbot State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -139,6 +140,7 @@ function App() {
       if (res.ok) {
         const newReflection = await res.json();
         setReflectionsHistory([newReflection, ...reflectionsHistory]);
+        setSelectedDateFilter(null); // Clear filter to show the new entry immediately
         if (!customContent) {
           setReflectionInput("");
           setMood(null);
@@ -190,6 +192,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     setToken(null); setProfileData(null); setReflectionsHistory([]); setAnalysisData(null);
+    setSelectedDateFilter(null);
     setEmail(""); setPassword("");
   };
 
@@ -280,7 +283,6 @@ function App() {
     return streak;
   };
 
-  // Upgraded: Month-wise Grid Implementation
   const getLifeGrid = () => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -311,25 +313,42 @@ function App() {
       if (dayData) tooltip = `${targetDate.toLocaleDateString()}: ${count} Reflection${count > 1 ? 's' : ''}\nTime: ${dayData.times.join(', ')}`;
       else if (isFuture) tooltip = `${targetDate.toLocaleDateString()}: Future`;
 
-      let activeColorClass = 'w-[14px] h-[14px] sm:w-4 sm:h-4 rounded-sm transition-all duration-300 hover:scale-125 cursor-help ';
+      let activeColorClass = 'w-[14px] h-[14px] sm:w-[18px] sm:h-[18px] rounded-[4px] transition-all duration-300 ';
 
       if (count > 0) {
+        activeColorClass += 'cursor-pointer hover:scale-125 ';
         if (theme === 'dark') {
-          activeColorClass += count === 1 ? 'bg-[#5EEAD4]/60 shadow-[0_0_8px_rgba(94,234,212,0.4)]' : 'bg-[#5EEAD4] shadow-[0_0_12px_rgba(94,234,212,0.8)] scale-110';
+          activeColorClass += count === 1 ? 'bg-[#5EEAD4]/70 shadow-[0_0_10px_rgba(94,234,212,0.4)]' : 'bg-[#5EEAD4] shadow-[0_0_15px_rgba(94,234,212,0.8)] scale-110';
         } else {
-          activeColorClass += count === 1 ? 'bg-[#6366F1]/60 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-[#6366F1] shadow-[0_0_12px_rgba(99,102,241,0.8)] scale-110';
+          activeColorClass += count === 1 ? 'bg-[#6366F1]/70 shadow-[0_0_10px_rgba(99,102,241,0.4)]' : 'bg-[#6366F1] shadow-[0_0_15px_rgba(99,102,241,0.8)] scale-110';
         }
       } else if (isFuture) {
-        // Render hollow boxes for future days
+        activeColorClass += 'cursor-default ';
         activeColorClass += theme === 'dark' ? 'bg-[#161A23] border border-[#2A3040]' : 'bg-[#F7F8FB] border border-[#E3E6EF]';
       } else {
-        // Render faded boxes for past missed days
-        activeColorClass += theme === 'dark' ? 'bg-[#2A3040] opacity-50 hover:opacity-80' : 'bg-[#E3E6EF] hover:bg-[#D1D5DB]';
+        activeColorClass += 'cursor-default ';
+        activeColorClass += theme === 'dark' ? 'bg-[#2A3040] opacity-40 hover:opacity-60' : 'bg-[#E3E6EF] hover:bg-[#D1D5DB]';
       }
       
-      return <div key={i} title={tooltip} className={activeColorClass} />;
+      return (
+        <div 
+          key={i} 
+          title={tooltip} 
+          onClick={() => {
+            if (count > 0) {
+              setSelectedDateFilter(targetDate.toDateString());
+              document.getElementById('memory-log-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+          className={activeColorClass} 
+        />
+      );
     });
   };
+
+  const displayedReflections = selectedDateFilter 
+    ? reflectionsHistory.filter(ref => new Date(ref.created_at).toDateString() === selectedDateFilter)
+    : reflectionsHistory.slice(0, visibleCount);
 
   return (
     <div className={`relative min-h-screen transition-colors duration-700 font-['Inter',sans-serif] selection:bg-[#5EEAD4] selection:text-[#0F1117] ${
@@ -399,42 +418,50 @@ function App() {
             {profileData ? (
               <>
                 <div className={`p-5 sm:p-10 rounded-3xl transition-all duration-500 mb-10 relative z-20 ${theme === 'dark' ? 'bg-[#161A23] border border-[#2A3040] shadow-[0_8px_30px_rgba(0,0,0,0.45)]' : 'bg-white border border-[#E3E6EF] shadow-[0_8px_30px_rgba(0,0,0,0.04)]'}`}>
+                  
+                  {/* Greeting & Inline Persona Setting */}
                   <div className="flex justify-between items-start mb-8 sm:mb-10">
-                    <h2 className="text-2xl sm:text-4xl font-light mb-2">Welcome back, <span className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-[#5EEAD4] dark:to-[#A78BFA]">{getDisplayName()}</span>.</h2>
+                    <div>
+                      <h2 className="text-2xl sm:text-4xl font-light mb-1">Welcome back, <span className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-[#5EEAD4] dark:to-[#A78BFA]">{getDisplayName()}</span>.</h2>
+                      
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-[10px] sm:text-xs uppercase tracking-widest ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>Persona:</span>
+                        {!isEditingPersona ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs sm:text-sm font-medium capitalize ${theme === 'dark' ? 'text-[#E6EAF2]' : 'text-[#1F2937]'}`}>{profileData.persona}</span>
+                            <button onClick={() => { setIsEditingPersona(true); setNewPersona(profileData.persona); }} className={`p-1 rounded-md transition-colors ${theme === 'dark' ? 'hover:bg-[#2A3040] text-[#A4A9B6]' : 'hover:bg-[#E3E6EF] text-[#6B7280]'}`} title="Edit Persona">
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <select value={newPersona} onChange={(e) => setNewPersona(e.target.value)} className={`p-1 text-[10px] sm:text-xs rounded-md border focus:outline-none transition-all duration-300 ${theme === 'dark' ? 'bg-[#161A23] border-[#2A3040] text-white focus:border-[#5EEAD4]' : 'bg-white border-[#E3E6EF] text-[#1F2937] focus:border-[#6366F1]'}`}>
+                              <option value="guest">Guest</option><option value="student">Student</option><option value="homemaker">Homemaker</option><option value="professional">Professional</option>
+                            </select>
+                            <button onClick={handleUpdatePersona} className="text-emerald-500 hover:text-emerald-400 p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg></button>
+                            <button onClick={() => setIsEditingPersona(false)} className="text-rose-500 hover:text-rose-400 p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <button onClick={handleLogout} className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'text-[#6B7280] hover:bg-[#1D2230] hover:text-white' : 'text-[#9CA3AF] hover:bg-[#F1F3F9] hover:text-[#1F2937]'}`} title="Disconnect"><svg className="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
-                    <div className={`p-5 rounded-2xl transition-colors duration-300 flex flex-col justify-between ${theme === 'dark' ? 'bg-[#0F1117] border border-[#1D2230]' : 'bg-[#F7F8FB] border border-[#F1F3F9]'}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs uppercase tracking-widest font-medium ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>Active Persona</span>
-                        {!isEditingPersona && <button onClick={() => { setIsEditingPersona(true); setNewPersona(profileData.persona); }} className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full transition-all duration-300 ${theme === 'dark' ? 'bg-[#2A3040] hover:bg-[#5EEAD4] hover:text-[#0F1117]' : 'bg-[#E3E6EF] hover:bg-[#6366F1] hover:text-white'}`}>Configure</button>}
-                      </div>
-                      {isEditingPersona ? (
-                        <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                          <select value={newPersona} onChange={(e) => setNewPersona(e.target.value)} className={`flex-1 p-2 rounded-xl text-sm border focus:outline-none transition-all duration-300 ${theme === 'dark' ? 'bg-[#161A23] border-[#2A3040] text-white focus:border-[#5EEAD4] focus:ring-1 focus:ring-[#5EEAD4]' : 'bg-white border-[#E3E6EF] text-[#1F2937] focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]'}`}>
-                            <option value="guest">Guest</option><option value="student">Student</option><option value="homemaker">Homemaker</option><option value="professional">Professional</option>
-                          </select>
-                          <div className="flex gap-2">
-                            <button onClick={handleUpdatePersona} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-xl transition-colors">✓</button>
-                            <button onClick={() => setIsEditingPersona(false)} className="flex-1 sm:flex-none px-4 py-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-xl transition-colors">✕</button>
-                          </div>
-                        </div>
-                      ) : <span className="text-xl sm:text-2xl font-light capitalize tracking-wide mt-2 block">{profileData.persona}</span>}
-                    </div>
-
-                    <div className={`p-5 rounded-2xl transition-colors duration-300 ${theme === 'dark' ? 'bg-[#0F1117] border border-[#1D2230]' : 'bg-[#F7F8FB] border border-[#F1F3F9]'}`}>
-                       <div className="flex justify-between items-center mb-3">
-                         <span className={`block text-xs uppercase tracking-widest font-medium ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>Consistency Streak</span>
-                         {calculateStreak() > 0 && <span className={`text-xs font-medium px-2 py-1 rounded-md ${theme === 'dark' ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-500/10 text-orange-600'}`}>🔥 {calculateStreak()} Day{calculateStreak() !== 1 && 's'}</span>}
+                  {/* Hero Consistency Streak Widget */}
+                  <div className={`p-5 sm:p-6 mb-8 rounded-2xl transition-colors duration-300 ${theme === 'dark' ? 'bg-[#0F1117] border border-[#1D2230]' : 'bg-[#F7F8FB] border border-[#F1F3F9]'}`}>
+                     <div className="flex justify-between items-start sm:items-center mb-4">
+                       <div>
+                         <span className={`block text-xs uppercase tracking-widest font-medium ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>Consistency Grid</span>
+                         <p className={`text-[10px] uppercase tracking-widest mt-1 ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+                           {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                         </p>
                        </div>
-                       <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">{getLifeGrid()}</div>
-                       <p className={`text-[10px] uppercase tracking-widest mt-4 text-right ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
-                         {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
-                       </p>
-                    </div>
+                       {calculateStreak() > 0 && <span className={`text-[10px] sm:text-xs font-medium px-3 py-1.5 rounded-lg ${theme === 'dark' ? 'bg-orange-500/10 text-orange-400' : 'bg-orange-500/10 text-orange-600'}`}>🔥 {calculateStreak()} Day Streak</span>}
+                     </div>
+                     <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-2">{getLifeGrid()}</div>
                   </div>
 
+                  {/* Mood Grid */}
                   <div className={`p-5 mb-6 sm:mb-8 rounded-2xl transition-colors duration-300 overflow-x-auto ${theme === 'dark' ? 'bg-[#0F1117] border border-[#1D2230]' : 'bg-[#F7F8FB] border border-[#F1F3F9]'}`}>
                       <span className={`block text-xs uppercase tracking-widest font-medium mb-4 ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>State of Mind</span>
                       <div className="flex sm:grid sm:grid-cols-8 gap-2 min-w-max">
@@ -447,6 +474,7 @@ function App() {
                       </div>
                   </div>
 
+                  {/* Reflection Journal Input Area */}
                   <div className="relative z-30">
                     <textarea value={reflectionInput} onChange={(e) => setReflectionInput(e.target.value)} placeholder="What is on your mind today? Type your reflection here..." disabled={isAnalyzing} className={`w-full min-h-[140px] sm:min-h-[160px] p-4 sm:p-6 rounded-2xl resize-y transition-all duration-500 outline-none font-['Source_Serif_4'] text-base sm:text-lg ${theme === 'dark' ? 'bg-[#0F1117] border border-[#2A3040] text-[#E6EAF2] placeholder-[#4B5563] focus:border-[#5EEAD4]/50 focus:shadow-[0_0_20px_rgba(94,234,212,0.05)]' : 'bg-[#F7F8FB] border border-[#E3E6EF] text-[#1F2937] placeholder-[#9CA3AF] focus:border-[#6366F1]/50 focus:shadow-[0_4px_20px_rgba(99,102,241,0.05)]'}`} />
                     <div className="flex justify-end mt-4">
@@ -537,62 +565,81 @@ function App() {
 
                 {/* --- REFLECTION HISTORY TIMELINE --- */}
                 {reflectionsHistory.length > 0 && (
-                  <div className="w-full mt-8 animate-fade-in-up relative z-20">
-                    <h3 className={`text-sm uppercase tracking-widest font-medium mb-6 px-2 ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>Nexus Memory Log</h3>
+                  <div id="memory-log-section" className="w-full mt-8 animate-fade-in-up relative z-20">
+                    <div className="flex justify-between items-end mb-6 px-2">
+                      <h3 className={`text-sm uppercase tracking-widest font-medium ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#9CA3AF]'}`}>
+                        {selectedDateFilter ? `Memory Log: ${new Date(selectedDateFilter).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}` : 'Nexus Memory Log'}
+                      </h3>
+                      {selectedDateFilter && (
+                        <button 
+                          onClick={() => setSelectedDateFilter(null)}
+                          className={`text-[10px] px-3 py-1.5 rounded-full uppercase tracking-widest font-medium transition-all duration-300 ${theme === 'dark' ? 'bg-[#2A3040] text-[#A4A9B6] hover:text-white' : 'bg-[#E3E6EF] text-[#6B7280] hover:text-[#1F2937]'}`}
+                        >
+                          Clear Filter
+                        </button>
+                      )}
+                    </div>
                     
                     <div className="flex flex-col gap-6">
-                      {reflectionsHistory.slice(0, visibleCount).map((ref) => {
-                        const insightData = parseInsight(ref.ai_insight);
-                        const refDate = new Date(ref.created_at);
-                        const today = new Date();
-                        const isToday = refDate.toDateString() === today.toDateString();
-                        
-                        return (
-                        <div key={ref.id} className={`p-5 sm:p-8 rounded-3xl transition-all duration-300 relative group ${theme === 'dark' ? 'bg-[#161A23] border border-[#2A3040] hover:border-[#5EEAD4]/30' : 'bg-white border border-[#E3E6EF] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-[#6366F1]/30'}`}>
-                          {isToday && (
-                            <div className={`absolute top-4 right-4 sm:top-6 sm:right-6 flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
-                              {editingRefId !== ref.id && <button onClick={() => { setEditingRefId(ref.id); setEditContent(ref.content); }} className="p-2 hover:text-[#5EEAD4] transition-colors" title="Edit"><svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>}
-                              <button onClick={() => handleDeleteReflection(ref.id)} className="p-2 hover:text-rose-500 transition-colors" title="Delete"><svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-3 mb-4 opacity-80">
-                            {ref.mood && <span className="text-xl sm:text-2xl">{getMoodIcon(ref.mood)}</span>}
-                            <span className={`text-[10px] sm:text-xs uppercase tracking-widest ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>{refDate.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                          </div>
+                      {displayedReflections.length === 0 && selectedDateFilter ? (
+                         <div className={`p-10 text-center rounded-3xl border border-dashed ${theme === 'dark' ? 'border-[#2A3040] text-[#6B7280]' : 'border-[#E3E6EF] text-[#9CA3AF]'}`}>
+                           <p className="italic text-sm">No memories recorded on this day.</p>
+                         </div>
+                      ) : (
+                        displayedReflections.map((ref) => {
+                          const insightData = parseInsight(ref.ai_insight);
+                          const refDate = new Date(ref.created_at);
+                          const today = new Date();
+                          const isToday = refDate.toDateString() === today.toDateString();
                           
-                          {editingRefId === ref.id ? (
-                            <div className="mb-6">
-                              <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className={`w-full min-h-[120px] p-4 rounded-xl resize-y outline-none font-['Source_Serif_4'] text-base sm:text-lg ${theme === 'dark' ? 'bg-[#0F1117] border border-[#5EEAD4]/50 text-[#E6EAF2]' : 'bg-[#F7F8FB] border border-[#6366F1]/50 text-[#1F2937]'}`} />
-                              <div className="flex justify-end gap-2 mt-3">
-                                <button onClick={() => setEditingRefId(null)} className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium ${theme === 'dark' ? 'hover:bg-[#2A3040]' : 'hover:bg-[#E3E6EF]'}`}>Cancel</button>
-                                <button onClick={() => handleSaveEdit(ref.id)} className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#0F1117] ${theme === 'dark' ? 'bg-[#5EEAD4]' : 'bg-[#6366F1] text-white'}`}>Save Updates</button>
+                          return (
+                          <div key={ref.id} className={`p-5 sm:p-8 rounded-3xl transition-all duration-300 relative group ${theme === 'dark' ? 'bg-[#161A23] border border-[#2A3040] hover:border-[#5EEAD4]/30' : 'bg-white border border-[#E3E6EF] shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-[#6366F1]/30'}`}>
+                            {isToday && (
+                              <div className={`absolute top-4 right-4 sm:top-6 sm:right-6 flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+                                {editingRefId !== ref.id && <button onClick={() => { setEditingRefId(ref.id); setEditContent(ref.content); }} className="p-2 hover:text-[#5EEAD4] transition-colors" title="Edit"><svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>}
+                                <button onClick={() => handleDeleteReflection(ref.id)} className="p-2 hover:text-rose-500 transition-colors" title="Delete"><svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                               </div>
-                            </div>
-                          ) : (
-                            <p className="font-['Source_Serif_4'] text-base sm:text-lg leading-relaxed mb-6 whitespace-pre-wrap pr-8 sm:pr-10" dangerouslySetInnerHTML={formatMarkdownText(ref.content)}></p>
-                          )}
+                            )}
 
-                          {ref.ai_insight && (
-                            <div className={`p-4 sm:p-5 rounded-2xl relative overflow-hidden ${theme === 'dark' ? 'bg-[#0F1117]/80' : 'bg-[#F7F8FB]'}`}>
-                              <div className={`absolute top-0 left-0 w-1 h-full ${theme === 'dark' ? 'bg-[#5EEAD4]' : 'bg-[#6366F1]'}`}></div>
-                              <span className={`block text-[10px] sm:text-xs uppercase tracking-widest font-medium mb-3 ${theme === 'dark' ? 'text-[#5EEAD4]' : 'text-[#6366F1]'}`}>Nexus Insight</span>
-                              <p className={`text-sm sm:text-base leading-relaxed mb-4 ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#4B5563]'}`} dangerouslySetInnerHTML={formatMarkdownText(insightData.content)}></p>
-                              
-                              {insightData.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                  {insightData.tags.map((tag, idx) => (
-                                    <span key={idx} className={`text-[10px] sm:text-xs px-3 py-1 rounded-full font-medium tracking-wide border ${theme === 'dark' ? 'bg-[#5EEAD4]/10 text-[#5EEAD4] border-[#5EEAD4]/20' : 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20'}`}>{tag}</span>
-                                  ))}
-                                </div>
-                              )}
+                            <div className="flex items-center gap-3 mb-4 opacity-80">
+                              {ref.mood && <span className="text-xl sm:text-2xl">{getMoodIcon(ref.mood)}</span>}
+                              <span className={`text-[10px] sm:text-xs uppercase tracking-widest ${theme === 'dark' ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>{refDate.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
                             </div>
-                          )}
-                        </div>
-                      )})}
+                            
+                            {editingRefId === ref.id ? (
+                              <div className="mb-6">
+                                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className={`w-full min-h-[120px] p-4 rounded-xl resize-y outline-none font-['Source_Serif_4'] text-base sm:text-lg ${theme === 'dark' ? 'bg-[#0F1117] border border-[#5EEAD4]/50 text-[#E6EAF2]' : 'bg-[#F7F8FB] border border-[#6366F1]/50 text-[#1F2937]'}`} />
+                                <div className="flex justify-end gap-2 mt-3">
+                                  <button onClick={() => setEditingRefId(null)} className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium ${theme === 'dark' ? 'hover:bg-[#2A3040]' : 'hover:bg-[#E3E6EF]'}`}>Cancel</button>
+                                  <button onClick={() => handleSaveEdit(ref.id)} className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#0F1117] ${theme === 'dark' ? 'bg-[#5EEAD4]' : 'bg-[#6366F1] text-white'}`}>Save Updates</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="font-['Source_Serif_4'] text-base sm:text-lg leading-relaxed mb-6 whitespace-pre-wrap pr-8 sm:pr-10" dangerouslySetInnerHTML={formatMarkdownText(ref.content)}></p>
+                            )}
+
+                            {ref.ai_insight && (
+                              <div className={`p-4 sm:p-5 rounded-2xl relative overflow-hidden ${theme === 'dark' ? 'bg-[#0F1117]/80' : 'bg-[#F7F8FB]'}`}>
+                                <div className={`absolute top-0 left-0 w-1 h-full ${theme === 'dark' ? 'bg-[#5EEAD4]' : 'bg-[#6366F1]'}`}></div>
+                                <span className={`block text-[10px] sm:text-xs uppercase tracking-widest font-medium mb-3 ${theme === 'dark' ? 'text-[#5EEAD4]' : 'text-[#6366F1]'}`}>Nexus Insight</span>
+                                <p className={`text-sm sm:text-base leading-relaxed mb-4 ${theme === 'dark' ? 'text-[#A4A9B6]' : 'text-[#4B5563]'}`} dangerouslySetInnerHTML={formatMarkdownText(insightData.content)}></p>
+                                
+                                {insightData.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 mt-3">
+                                    {insightData.tags.map((tag, idx) => (
+                                      <span key={idx} className={`text-[10px] sm:text-xs px-3 py-1 rounded-full font-medium tracking-wide border ${theme === 'dark' ? 'bg-[#5EEAD4]/10 text-[#5EEAD4] border-[#5EEAD4]/20' : 'bg-[#6366F1]/10 text-[#6366F1] border-[#6366F1]/20'}`}>{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          );
+                        })
+                      )}
                     </div>
 
-                    {visibleCount < reflectionsHistory.length && (
+                    {!selectedDateFilter && visibleCount < reflectionsHistory.length && (
                       <div className="mt-8 text-center">
                         <button onClick={() => setVisibleCount(v => v + 2)} className={`px-6 py-3 rounded-full text-xs sm:text-sm font-medium tracking-wider transition-all duration-300 border ${theme === 'dark' ? 'border-[#2A3040] text-[#A4A9B6] hover:bg-[#1D2230] hover:text-[#5EEAD4] hover:border-[#5EEAD4]' : 'border-[#E3E6EF] text-[#6B7280] hover:bg-[#F1F3F9] hover:text-[#6366F1] hover:border-[#6366F1]'}`}>Unlock Deeper Memory</button>
                       </div>
