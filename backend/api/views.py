@@ -251,8 +251,8 @@ You MUST output your response EXACTLY as a JSON object matching this structure. 
             "prompt": full_prompt,
             "stream": False
         }
-        # Deep analysis takes more processing power, timeout increased to 180s
-        ollama_response = requests.post('http://127.0.0.1:11434/api/generate', json=ollama_payload, timeout=180)
+        # Deep analysis takes more processing power, timeout increased to 630s
+        ollama_response = requests.post('http://127.0.0.1:11434/api/generate', json=ollama_payload, timeout=630)
         
         if ollama_response.status_code == 200:
             ai_reply = ollama_response.json().get('response', '').strip()
