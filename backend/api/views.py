@@ -103,7 +103,7 @@ Provide a short, poetic, and motivating insight (2-3 sentences max) that connect
                 "stream": False
             }
             # UPDATE 2: Changed 'localhost' to '127.0.0.1' to fix Windows network resolution
-            ollama_response = requests.post('http://127.0.0.1:11434/api/generate', json=ollama_payload, timeout=45)
+            ollama_response = requests.post('http://127.0.0.1:11434/api/generate', json=ollama_payload, timeout=120)
             
             if ollama_response.status_code == 200:
                 ai_insight = ollama_response.json().get('response', '').strip()
