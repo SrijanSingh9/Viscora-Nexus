@@ -94,20 +94,24 @@ Provide a short, poetic, and motivating insight (2-3 sentences max) that connect
 
         full_prompt = f"{system_prompt}\n\n{history_text}\n\nCurrent Entry: {content}\n\nYour Insight:"
 
-        # 3. Call the local LLM (Assuming Ollama is running on default port 11434)
+        # 3. Call the local LLM 
         ai_insight = "The Nexus is quiet right now. (Make sure Ollama is running locally!)"
         try:
-            # Change "gemma" to "qwen" if you are using Qwen!
             ollama_payload = {
-                "model": "gemma", 
+                "model": "gemma:2b", # <-- UPDATE 1: Added :2b to match exactly what you downloaded
                 "prompt": full_prompt,
                 "stream": False
             }
-            ollama_response = requests.post('http://localhost:11434/api/generate', json=ollama_payload, timeout=30)
+            # UPDATE 2: Changed 'localhost' to '127.0.0.1' to fix Windows network resolution
+            ollama_response = requests.post('http://127.0.0.1:11434/api/generate', json=ollama_payload, timeout=45)
+            
             if ollama_response.status_code == 200:
                 ai_insight = ollama_response.json().get('response', '').strip()
+            else:
+                print(f"Ollama returned an error: {ollama_response.text}")
+                
         except requests.exceptions.RequestException as e:
-            print("Failed to connect to local LLM:", e)
+            print(f"Failed to connect to local LLM: {e}")
 
         # 4. Save everything to the database
         reflection = DailyReflection.objects.create(
