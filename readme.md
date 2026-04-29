@@ -19,7 +19,7 @@ Viscora Nexus leverages a modern, decoupled architecture for maximum scalability
 * **Frontend:** Vite (for lightning-fast HMR and optimized builds)
 * **Backend:** Django (Python-based, providing a secure and scalable RESTful API)
 * **Database:** PostgreSQL (Robust relational data management for complex user profiles and history)
-* **AI Integration:** Local LLMs (Gemma / Qwen)
+* **AI Integration:** Local LLMs (Gemma / Qwen), gemini API for deployed (this thing)
 
 ## 📐 Architecture
 
@@ -33,3 +33,7 @@ The application separates the frontend presentation layer from the backend busin
 * Node.js 18+
 * PostgreSQL
 * (Optional) Ollama or similar local LLM runner for Gemma/Qwen
+
+## Just go to link 
+### We kindly request you to use it for at least 5 days to explore it properly:  
+[Visit Viscora Nexus](https://viscora-nexus.vercel.app/)
